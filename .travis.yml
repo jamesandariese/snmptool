@@ -4,7 +4,7 @@ go:
 deploy:
   provider: releases
   api_key:
-    secure: "ToGV7VMPomMwoVj881k5sxH55dgUMGGAkeSN5e1hox9sKbL+cHGgI/deOV03j6vMNb5lrdr5rZ/gISSNzMa6sroKtptvuYlM12XUKladg+QDzEvQFhok0ORsQNayRUzt28+5Bq9kr2o5vVIFfhA2bXLBz6AnCfcPgEdCOa+aN/I="
+    secure: OY/30Kaf3pLBRXtw6q/d8M9kQ1LuW5krZv02FOb7RRdbyPyyZXREBpH65G96MvNU9Wl/GAwJWWiSIX7NJ+Q1kHMG83+Brbs1uYCMppljPuNHMPStAj2dppwp/Imy08btVPvpzVtUpawTXfC/T+9fxWySQKUvK0j0NgeWl0VO/zZbJ2MeCJ5LmzE4yNrTvxyL4ibxpa5837iuyMXsqH+k6bpN5wxfZtYpojcSu5dOJXEQ+qGHzliQK/QL+VNCBzd0e7Wcu7LbYFuFbZ7bs8MBsgWQqAzuqVaXFWCKOe6zhFwklZ/3GZsDevyk78bupHxO5XrEIXeUP1UObvzKnTkfS92jR0S4Oy38WXpPHp4AIpBfQ5tU646V46daY0k1+61jZZqBajt8L5eWDKby2/JI5bfMFyA1lBZUOacYbfBmAfhJWHqqDGthAWsjCEGZKOmTPYg2KQYR87BA70mtQki9een0+phdAZganOr06keisEkn/XPFMiZOKIoL7H5XbFQHNBAlyqEE0Np8NUgFjUVpMuMXIur1TuN504sAy+KVOKgUt7Kf5dG7AcKKXjToRNOnfUXPfB1bo750IzEgGfNQpj1KoFdiuQJxy7/LgxTQPcTbRKQzquGoC8Qe1kMC1Y0WMPXxYuPUSBrFZfqclq7D5rJgCjJgZlkRtWwrmaO2K2E=
   file: snmpdisk/snmpdisk
   on:
-    tags: true
+    repo: jamesandariese/snmptools
