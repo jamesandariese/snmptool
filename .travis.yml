@@ -10,4 +10,4 @@ deploy:
   file: snmpdisk/snmpdisk
   skip_cleanup: true
   on:
-    repo: jamesandariese/snmptools
+    tags: true
