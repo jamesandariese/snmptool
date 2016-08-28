@@ -1,6 +1,8 @@
 language: go
 go:
 - 1.7
+script:
+- "go build -o snmpdisk/snmpdisk github.com/jamesandariese/snmptools/snmpdisk"
 deploy:
   provider: releases
   api_key:
