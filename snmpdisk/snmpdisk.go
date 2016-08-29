@@ -138,22 +138,13 @@ func main() {
 		}
 
 		freespace := float64(avail.Variables[0].Value.(int)) * 100 / (float64(size.Variables[0].Value.(int)))
-		if criticalComparator, err := nagiosrangeparser.Compile(critical); err != nil {
-			return cli.NewExitError(fmt.Sprintf("UNKNOWN: error parsing critical pattern %v: %#v", critical, err), 3)
-		} else {
-			if criticalComparator.Compare(freespace) {
-				return cli.NewExitError(fmt.Sprintf("CRITICAL: %v %02.2f", mount, freespace), 2)
-			}
+		level, message, rc := nagiosrangeparser.NagiosComparator(warning, critical, freespace)
+		switch level {
+			case "UNKNOWN":
+				return cli.NewExitError(fmt.Sprintf("UNKNOWN: %s", message), rc)
+			default:
+				return cli.NewExitError(fmt.Sprintf("%s: %v %02.2f", level, mount, freespace), rc)
 		}
-		if warningComparator, err := nagiosrangeparser.Compile(warning); err != nil {
-			return cli.NewExitError(fmt.Sprintf("UNKNOWN: error parsing warning pattern %v: %#v", warning, err), 3)
-		} else {
-			if warningComparator.Compare(freespace) {
-				return cli.NewExitError(fmt.Sprintf("WARNING: %v %02.2f", mount, freespace), 1)
-			}
-		}
-		return cli.NewExitError(fmt.Sprintf("OK: %v %02.2f", mount, freespace), 0)
-
 	}
 	app.Run(os.Args)
 }
