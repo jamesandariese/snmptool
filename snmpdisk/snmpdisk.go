@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+var version string
+
 var community string
 var mount string
 var timeout time.Duration
@@ -51,6 +53,7 @@ func requireHostname(c *cli.Context) error {
 func main() {
 	app := cli.NewApp()
 	app.EnableBashCompletion = true
+	app.Version = version
 	app.Commands = []cli.Command{
 		{
 			Name:    "list",

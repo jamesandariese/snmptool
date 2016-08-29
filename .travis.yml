@@ -2,7 +2,7 @@ language: go
 go:
 - 1.7
 script:
-- "go build -ldflags \"-X main.version ${TRAVIS_TAG-$TRAVIS_COMMIT}\" -o snmpdisk/snmpdisk github.com/jamesandariese/snmptools/snmpdisk"
+- "go build -ldflags \"-X main.version=${TRAVIS_TAG-$TRAVIS_COMMIT}\" -o snmpdisk/snmpdisk github.com/jamesandariese/snmptools/snmpdisk"
 deploy:
   provider: releases
   api_key:
