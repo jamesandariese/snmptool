@@ -20,18 +20,18 @@ var warning string
 var critical string
 var hostname string
 
-var DriveNotFoundError = errors.New("drive not found")
+var OIDMappingNotFound = errors.New("OID mapping not found matching given string")
 
-func getSuffixForDrive(s *gosnmp.GoSNMP, mount string) (string, error) {
+func getSuffixForString(s *gosnmp.GoSNMP, OID, mount string, elts int) (string, error) {
 	c := make(chan gosnmp.SnmpPDU)
-	go s.StreamWalk(".1.3.6.1.2.1.25.2.3.1.3", c)
+	go s.StreamWalk(OID, c)
 
 	for s := range c {
 		if s.Value == mount {
 			return s.Name[strings.LastIndex(s.Name, ".")+1:], nil
 		}
 	}
-	return "", DriveNotFoundError
+	return "", OIDMappingNotFound
 }
 
 func createSnmpClient() (*gosnmp.GoSNMP, error) {
@@ -119,7 +119,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		suffix, err := getSuffixForDrive(s, mount)
+		suffix, err := getSuffixForString(s, ".1.3.6.1.2.1.25.2.3.1.3", mount, 1)
 		if err != nil {
 			return cli.NewExitError("Couldn't find drive "+mount+": "+err.Error(), 3)
 		}
