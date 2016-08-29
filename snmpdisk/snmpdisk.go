@@ -22,7 +22,7 @@ var hostname string
 
 var OIDMappingNotFound = errors.New("OID mapping not found matching given string")
 
-func getSuffixForString(s *gosnmp.GoSNMP, OID, mount string, elts int) (string, error) {
+func getSuffixForString(s *gosnmp.GoSNMP, OID, mount string) (string, error) {
 	c := make(chan gosnmp.SnmpPDU)
 	go s.StreamWalk(OID, c)
 
@@ -32,6 +32,34 @@ func getSuffixForString(s *gosnmp.GoSNMP, OID, mount string, elts int) (string, 
 		}
 	}
 	return "", OIDMappingNotFound
+}
+
+var NoValueFoundError = errors.New("no value found at associated OID")
+
+func getAssociatedValue(s *gosnmp.GoSNMP, OID, associate string, remelts int, append string) (interface{}, error) {
+	suffix, err := getSuffixForString(s, OID, associate)
+	if err != nil {
+		return "", err
+	}
+
+	for remelts > 0 {
+		OID = OID[:strings.LastIndex(OID, ".")]
+		remelts--
+	}
+	if append[0] != '.' {
+		OID += "." + append
+	} else {
+		OID += append
+	}
+	OID += "." + suffix
+	r, e := s.Get(OID)
+	if e != nil {
+		return nil, e
+	}
+	if len(r.Variables) < 1 {
+		return nil, NoValueFoundError
+	}
+	return r.Variables[0].Value, nil
 }
 
 func createSnmpClient() (*gosnmp.GoSNMP, error) {
@@ -70,10 +98,98 @@ func main() {
 				ch := make(chan gosnmp.SnmpPDU)
 				go s.StreamWalk(".1.3.6.1.2.1.25.2.3.1.3", ch)
 
-				for s := range(ch) {
+				for s := range ch {
 					fmt.Println(s.Value)
 				}
 				return nil
+			},
+		},
+		{
+			Name:  "checkfree",
+			Usage: "check available disk space",
+			Action: func(c *cli.Context) error {
+				if err := requireHostname(c); err != nil {
+					return err
+				}
+				s, err := createSnmpClient()
+				if err != nil {
+					return err
+				}
+				freespace, err := getAssociatedValue(s, ".1.3.6.1.4.1.2021.9.1.2", mount, 1, "9")
+				if err != nil {
+					return cli.NewExitError("Couldn't find drive free space:"+err.Error(), 3)
+				}
+				level, message, rc := nagiosrangeparser.NagiosComparator(warning, critical, float64(freespace.(int)))
+				switch level {
+				case "UNKNOWN":
+					return cli.NewExitError(fmt.Sprintf("UNKNOWN: %s", message), rc)
+				default:
+					return cli.NewExitError(fmt.Sprintf("%s: %v %d%%", level, mount, freespace), rc)
+				}
+			},
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:        "c, critical",
+					Value:       "~:90",
+					Usage:       "critical threshold",
+					Destination: &critical,
+				},
+				cli.StringFlag{
+					Name:        "w, warning",
+					Value:       "~:80",
+					Usage:       "warning threshold",
+					Destination: &warning,
+				},
+				cli.StringFlag{
+					Name:        "m, mount",
+					Value:       "/",
+					Usage:       "drive mount point to test",
+					Destination: &mount,
+				},
+			},
+		},
+		{
+			Name:  "checkinodes",
+			Usage: "check available inodes",
+			Action: func(c *cli.Context) error {
+				if err := requireHostname(c); err != nil {
+					return err
+				}
+				s, err := createSnmpClient()
+				if err != nil {
+					return err
+				}
+				freespace, err := getAssociatedValue(s, ".1.3.6.1.4.1.2021.9.1.2", mount, 1, "10")
+				if err != nil {
+					return cli.NewExitError("Couldn't find drive free space:"+err.Error(), 3)
+				}
+				level, message, rc := nagiosrangeparser.NagiosComparator(warning, critical, float64(freespace.(int)))
+				switch level {
+				case "UNKNOWN":
+					return cli.NewExitError(fmt.Sprintf("UNKNOWN: %s", message), rc)
+				default:
+					return cli.NewExitError(fmt.Sprintf("%s: %v %d%%", level, mount, freespace), rc)
+				}
+			},
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:        "c, critical",
+					Value:       "~:90",
+					Usage:       "critical threshold",
+					Destination: &critical,
+				},
+				cli.StringFlag{
+					Name:        "w, warning",
+					Value:       "~:80",
+					Usage:       "warning threshold",
+					Destination: &warning,
+				},
+				cli.StringFlag{
+					Name:        "m, mount",
+					Value:       "/",
+					Usage:       "drive mount point to test",
+					Destination: &mount,
+				},
 			},
 		},
 	}
@@ -86,65 +202,11 @@ func main() {
 			Destination: &timeout,
 		},
 		cli.StringFlag{
-			Name:        "c, critical",
-			Value:       "~:90",
-			Usage:       "critical threshold",
-			Destination: &critical,
-		},
-		cli.StringFlag{
-			Name:        "w, warning",
-			Value:       "~:80",
-			Usage:       "warning threshold",
-			Destination: &warning,
-		},
-		cli.StringFlag{
-			Name:        "m, mount",
-			Value:       "/",
-			Usage:       "drive mount point to test",
-			Destination: &mount,
-		},
-		cli.StringFlag{
 			Name:        "C, community",
 			Value:       "public",
 			Usage:       "SNMP community string",
 			Destination: &community,
 		},
-	}
-
-	app.Action = func(ctx *cli.Context) error {
-		if err := requireHostname(ctx); err != nil {
-			return err
-		}
-		s, err := createSnmpClient()
-		if err != nil {
-			return err
-		}
-		suffix, err := getSuffixForString(s, ".1.3.6.1.2.1.25.2.3.1.3", mount, 1)
-		if err != nil {
-			return cli.NewExitError("Couldn't find drive "+mount+": "+err.Error(), 3)
-		}
-		if suffix == "" {
-			return cli.NewExitError("Couldn't find drive "+mount, 3)
-		}
-
-		size, err := s.Get(".1.3.6.1.2.1.25.2.3.1.5." + suffix)
-		if err != nil {
-			return cli.NewExitError("Error getting size of drive "+err.Error(), 3)
-		}
-
-		avail, err := s.Get(".1.3.6.1.2.1.25.2.3.1.6." + suffix)
-		if err != nil {
-			return cli.NewExitError("Error getting available space of drive "+err.Error(), 3)
-		}
-
-		freespace := float64(avail.Variables[0].Value.(int)) * 100 / (float64(size.Variables[0].Value.(int)))
-		level, message, rc := nagiosrangeparser.NagiosComparator(warning, critical, freespace)
-		switch level {
-			case "UNKNOWN":
-				return cli.NewExitError(fmt.Sprintf("UNKNOWN: %s", message), rc)
-			default:
-				return cli.NewExitError(fmt.Sprintf("%s: %v %02.2f", level, mount, freespace), rc)
-		}
 	}
 	app.Run(os.Args)
 }
