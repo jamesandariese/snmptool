@@ -96,7 +96,7 @@ func main() {
 					return err
 				}
 				ch := make(chan gosnmp.SnmpPDU)
-				go s.StreamWalk(".1.3.6.1.2.1.25.2.3.1.3", ch)
+				go s.StreamWalk(".1.3.6.1.4.1.2021.9.1.2", ch)
 
 				for s := range ch {
 					fmt.Println(s.Value)
