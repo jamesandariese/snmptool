@@ -105,7 +105,7 @@ func main() {
 			},
 		},
 		{
-			Name:  "checkfree",
+			Name:  "disk",
 			Usage: "check available disk space",
 			Action: func(c *cli.Context) error {
 				if err := requireHostname(c); err != nil {
@@ -149,7 +149,7 @@ func main() {
 			},
 		},
 		{
-			Name:  "checkinodes",
+			Name:  "inodes",
 			Usage: "check available inodes",
 			Action: func(c *cli.Context) error {
 				if err := requireHostname(c); err != nil {
